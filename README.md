@@ -50,13 +50,14 @@ go run cmd/vigil/main.go controller --help
 The Agent runs on your Unraid server.
 
 ```bash
-# Run (Dry Run Mode - Safe for testing)
-go run cmd/vigil/main.go agent --dry-run
-# or
+# Run (Dry Run)
 ./vigil agent --dry-run
 
-# Run (Production)
-go run cmd/vigil/main.go agent
+# Run (Production - Sleep Mode [Default])
+./vigil agent --shutdown-mode sleep
+
+# Run (Production - Full Power Off)
+./vigil agent --shutdown-mode off
 ```
 
 ## Telegram Commands
@@ -67,33 +68,48 @@ go run cmd/vigil/main.go agent
 
 ## Deployment (Docker / GHCR)
 
-This project includes a multi-stage `Dockerfile` and a GitHub Actions pipeline to automatically publish images to GHCR.
-
 ### Pulling from GHCR
 ```bash
-docker pull ghcr.io/<your-username>/vigil-controller:latest
-docker pull ghcr.io/<your-username>/vigil-agent:latest
+docker pull ghcr.io/<your-username>/vigil:latest
 ```
+
+### Running with Docker
+
+#### Standard (Generic)
+```bash
+# Controller
+docker run -d --restart always -p 8080:8080 --env-file .env vigil:latest controller
+
+# Agent (Sleep Mode)
+docker run -d --restart always --network host --privileged vigil:latest agent
+
+# Agent (Power Off Mode)
+docker run -d --restart always --network host --privileged vigil:latest agent --shutdown-mode off
+```
+
+#### Unraid (Agent)
+Run this command in the Unraid terminal to start the Agent (using Sleep mode):
+```bash
+docker run -d \
+  --name vigil-agent \
+  --restart always \
+  --privileged \
+  --net=host \
+  -e CONTROLLER_URL="http://<CONTROLLER_IP>:8080" \
+  -e SHUTDOWN_MODE="sleep" \
+  ghcr.io/<your-username>/vigil:latest agent
+```
+*Replace `<CONTROLLER_IP>` with the IP where your Controller is running.*
+*Set `SHUTDOWN_MODE` to `off` if you want a full shutdown instead of sleep.*
 
 ### Building Locally
 ```bash
-# Build Unified Binary
-go build -o vigil cmd/vigil/main.go
-
-# Build Controller Image
-docker build --target controller -t vigil-controller:latest .
-
-# Build Agent Image
-docker build --target agent -t vigil-agent:latest .
+docker build -t vigil:latest .
 ```
 
 ### Manual Binary Build
-To build tiny binaries:
+To build a tiny unified binary:
 
 ```bash
-# Build Controller
-CGO_ENABLED=0 go build -o vigil-controller cmd/controller/main.go
-
-# Build Agent (for Linux/Amd64 Unraid)
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o vigil-agent cmd/agent/main.go
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o vigil cmd/vigil/main.go
 ```

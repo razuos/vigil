@@ -28,10 +28,12 @@ func NewAgentCommand() *cobra.Command {
 	cmd.Flags().String("controller", "http://localhost:8080", "Vigil Controller URL")
 	cmd.Flags().Duration("interval", 1*time.Minute, "Check Interval")
 	cmd.Flags().Bool("dry-run", false, "Dry Run Mode")
+	cmd.Flags().String("shutdown-mode", "off", "Shutdown Mode: 'sleep' or 'off' (default)")
 
 	viper.BindPFlag("controller_url", cmd.Flags().Lookup("controller"))
 	viper.BindPFlag("check_interval", cmd.Flags().Lookup("interval"))
 	viper.BindPFlag("dry_run", cmd.Flags().Lookup("dry-run"))
+	viper.BindPFlag("shutdown_mode", cmd.Flags().Lookup("shutdown-mode"))
 
 	return cmd
 }
@@ -40,11 +42,12 @@ func startAgent() {
 	controllerURL := viper.GetString("controller_url")
 	interval := viper.GetDuration("check_interval")
 	dryRun := viper.GetBool("dry_run")
+	mode := viper.GetString("shutdown_mode")
 
-	slog.Info("Starting Vigil Agent", "controller", controllerURL, "dry_run", dryRun)
+	slog.Info("Starting Vigil Agent", "controller", controllerURL, "dry_run", dryRun, "mode", mode)
 
 	webClient := client.NewWebControlClient(controllerURL)
-	shutActuator := actuator.NewDirectShutdown()
+	shutActuator := actuator.NewDirectShutdown(mode)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()

@@ -16,12 +16,17 @@ COPY . .
 # Build Unified Binary
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/vigil ./cmd/vigil
 
+# --- Final Image ---
 FROM alpine:latest
 
 WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata
+# Install dependencies for both roles:
+# - Controller: ca-certificates, tzdata
+# - Agent: shutdown
+RUN apk add --no-cache ca-certificates tzdata shutdown
 
 COPY --from=builder /bin/vigil /usr/local/bin/vigil
 
-EXPOSE 8080
+# Default Entrypoint
 ENTRYPOINT ["vigil"]
+CMD ["--help"]

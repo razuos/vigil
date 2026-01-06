@@ -133,7 +133,7 @@ func startController() {
 			return fmt.Sprintf("❌ Failed to send WOL: %v", err)
 		}
 		wakeCounter.Inc()
-		return "⚡ Magic Packet sent!"
+		return "⚡ Magic Packet sent to " + mac + "!"
 	})
 
 	bot.RegisterCommand("/shutdown", func(args string) string {

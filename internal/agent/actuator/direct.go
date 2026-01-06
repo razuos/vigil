@@ -6,24 +6,38 @@ import (
 	"os/exec"
 )
 
-type DirectShutdown struct{}
+type DirectShutdown struct {
+	Mode string
+}
 
-func NewDirectShutdown() *DirectShutdown {
-	return &DirectShutdown{}
+func NewDirectShutdown(mode string) *DirectShutdown {
+	// Default to sleep if empty
+	if mode == "" {
+		mode = "off"
+	}
+	return &DirectShutdown{Mode: mode}
 }
 
 func (a *DirectShutdown) Name() string {
-	return "DirectShutdown"
+	return "DirectShutdown(" + a.Mode + ")"
 }
 
 func (a *DirectShutdown) Trigger(ctx context.Context) error {
-	// Tries standard linux shutdown command
-	cmd := exec.CommandContext(ctx, "shutdown", "-h", "now")
-	
+	var cmd *exec.Cmd
+
+	if a.Mode == "off" {
+		// Full Power Off
+		cmd = exec.CommandContext(ctx, "shutdown", "-h", "now")
+	} else {
+		// Default: Suspend to RAM (S3) for WOL compatibility
+		// This requires root/privileged access
+		cmd = exec.CommandContext(ctx, "sh", "-c", "echo mem > /sys/power/state")
+	}
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("direct shutdown failed: %v, output: %s", err, string(output))
+		return fmt.Errorf("%s failed: %v, output: %s", a.Mode, err, string(output))
 	}
-	
+
 	return nil
 }
