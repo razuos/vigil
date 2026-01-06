@@ -23,7 +23,7 @@ WORKDIR /app
 # Install dependencies for both roles:
 # - Controller: ca-certificates, tzdata
 # - Agent: shutdown
-RUN apk add --no-cache ca-certificates tzdata shutdown
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /bin/vigil /usr/local/bin/vigil
 
